@@ -40,7 +40,7 @@ A BOM is provided that can be used to define the versions of all Semantic Kernel
 : Provides a connector that can be used to interact with the OpenAI API.
 
 `semantickernel-aiservices-voyageai`
-: Provides connectors for VoyageAI's embedding and reranking services, including text embeddings, contextualized embeddings, multimodal embeddings, and document reranking.
+: Provides connectors for VoyageAI by MongoDB's embedding and reranking services, including text embeddings (e.g. voyage-4-large, voyage-4, voyage-code-4), contextualized embeddings (voyage-context-4), multimodal embeddings (voyage-multimodal-3.5), and document reranking (rerank-2.5).
 
 ## Example Configurations
 
@@ -75,9 +75,9 @@ POM XML for a simple project that uses OpenAI.
 </project>
 ```
 
-### Example: VoyageAI Embeddings and Reranking
+### Example: VoyageAI by MongoDB Embeddings and Reranking
 
-POM XML for a project that uses VoyageAI for embeddings and reranking.
+POM XML for a project that uses VoyageAI by MongoDB for embeddings and reranking.
 
 ```xml
 

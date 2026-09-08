@@ -25,10 +25,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class VoyageAIIntegrationTest {
 
     private static final String API_KEY_ENV_VAR = "VOYAGE_API_KEY";
-    private static final String DEFAULT_EMBEDDING_MODEL = "voyage-3-large";
-    private static final String DEFAULT_CONTEXTUALIZED_MODEL = "voyage-context-3";
-    private static final String DEFAULT_MULTIMODAL_MODEL = "voyage-multimodal-3";
-    private static final String DEFAULT_RERANK_MODEL = "rerank-2";
+    private static final String DEFAULT_EMBEDDING_MODEL = "voyage-4-large";
+    private static final String DEFAULT_CONTEXTUALIZED_MODEL = "voyage-context-4";
+    private static final String DEFAULT_MULTIMODAL_MODEL = "voyage-multimodal-3.5";
+    private static final String DEFAULT_RERANK_MODEL = "rerank-2.5";
 
     private String apiKey;
 

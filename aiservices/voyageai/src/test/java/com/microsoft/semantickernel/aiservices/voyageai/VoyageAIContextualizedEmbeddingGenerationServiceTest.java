@@ -6,6 +6,7 @@ import com.microsoft.semantickernel.aiservices.voyageai.core.VoyageAIClient;
 import com.microsoft.semantickernel.aiservices.voyageai.core.VoyageAIModels;
 import com.microsoft.semantickernel.services.textembedding.Embedding;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
 
@@ -50,7 +51,7 @@ public class VoyageAIContextualizedEmbeddingGenerationServiceTest {
             .thenReturn(Mono.just(mockResponse));
 
         VoyageAIContextualizedEmbeddingGenerationService service =
-            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-3", null);
+            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-context-4", null);
 
         List<List<String>> inputs = Arrays.asList(
             Arrays.asList("chunk1"),
@@ -65,6 +66,50 @@ public class VoyageAIContextualizedEmbeddingGenerationServiceTest {
         List<Float> expected2 = Arrays.asList(0.3f, 0.4f);
         assertEquals(expected1, results.get(0).getVector());
         assertEquals(expected2, results.get(1).getVector());
+    }
+
+    @Test
+    public void testGenerateContextualizedEmbeddingsForDocumentsSendsFlatInputs() {
+        VoyageAIClient mockClient = Mockito.mock(VoyageAIClient.class);
+
+        VoyageAIModels.ContextualizedEmbeddingResponse mockResponse =
+            new VoyageAIModels.ContextualizedEmbeddingResponse();
+
+        VoyageAIModels.EmbeddingDataItem item = new VoyageAIModels.EmbeddingDataItem();
+        item.setEmbedding(new float[]{0.5f, 0.6f});
+        item.setIndex(0);
+
+        VoyageAIModels.ContextualizedEmbeddingDataList dataList =
+            new VoyageAIModels.ContextualizedEmbeddingDataList();
+        dataList.setData(Arrays.asList(item));
+        mockResponse.setData(Arrays.asList(dataList));
+
+        ArgumentCaptor<Object> requestCaptor = ArgumentCaptor.forClass(Object.class);
+        when(mockClient.sendRequestAsync(
+            eq("contextualizedembeddings"),
+            requestCaptor.capture(),
+            eq(VoyageAIModels.ContextualizedEmbeddingResponse.class)))
+            .thenReturn(Mono.just(mockResponse));
+
+        VoyageAIContextualizedEmbeddingGenerationService service =
+            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-context-4", null);
+
+        // Flat form of inputs: Union[List[List[str]], List[str]] -> List[str]
+        List<String> documents = Arrays.asList("full document one", "full document two");
+
+        List<Embedding> results =
+            service.generateContextualizedEmbeddingsForDocumentsAsync(documents).block();
+
+        assertNotNull(results);
+        assertEquals(1, results.size());
+
+        VoyageAIModels.ContextualizedEmbeddingRequest sent =
+            (VoyageAIModels.ContextualizedEmbeddingRequest) requestCaptor.getValue();
+        // inputs must be serialized as a flat List<String>, not a nested list
+        assertTrue(sent.getInputs() instanceof List);
+        assertEquals(documents, sent.getInputs());
+        assertEquals("document", sent.getInputType());
+        assertEquals(Boolean.TRUE, sent.getEnableAutoChunking());
     }
 
     @Test
@@ -91,7 +136,7 @@ public class VoyageAIContextualizedEmbeddingGenerationServiceTest {
             .thenReturn(Mono.just(mockResponse));
 
         VoyageAIContextualizedEmbeddingGenerationService service =
-            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-3", null);
+            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-context-4", null);
 
         Embedding result2 = service.generateEmbeddingAsync("test text").block();
 
@@ -105,10 +150,10 @@ public class VoyageAIContextualizedEmbeddingGenerationServiceTest {
         VoyageAIClient mockClient = Mockito.mock(VoyageAIClient.class);
 
         VoyageAIContextualizedEmbeddingGenerationService service =
-            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-3", "test-service");
+            new VoyageAIContextualizedEmbeddingGenerationService(mockClient, "voyage-context-4", "test-service");
 
         assertEquals("test-service", service.getServiceId());
-        assertEquals("voyage-3", service.getModelId());
+        assertEquals("voyage-context-4", service.getModelId());
     }
 
     @Test
@@ -118,19 +163,19 @@ public class VoyageAIContextualizedEmbeddingGenerationServiceTest {
         VoyageAIContextualizedEmbeddingGenerationService service =
             VoyageAIContextualizedEmbeddingGenerationService.builder()
                 .withClient(mockClient)
-                .withModelId("voyage-3")
+                .withModelId("voyage-context-4")
                 .withServiceId("test-service")
                 .build();
 
         assertNotNull(service);
         assertEquals("test-service", service.getServiceId());
-        assertEquals("voyage-3", service.getModelId());
+        assertEquals("voyage-context-4", service.getModelId());
     }
 
     @Test
     public void testNullClientThrowsException() {
         assertThrows(IllegalArgumentException.class, () ->
-            new VoyageAIContextualizedEmbeddingGenerationService(null, "voyage-3", null));
+            new VoyageAIContextualizedEmbeddingGenerationService(null, "voyage-context-4", null));
     }
 
     @Test

@@ -18,8 +18,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * VoyageAI implementation of {@link TextEmbeddingGenerationService}.
- * Supports models like voyage-3-large, voyage-3.5, voyage-code-3, voyage-finance-2, voyage-law-2.
+ * VoyageAI by MongoDB implementation of {@link TextEmbeddingGenerationService}.
+ * Supports current models such as voyage-4-large, voyage-4, voyage-4-lite, voyage-code-4,
+ * voyage-finance-2 and voyage-law-2, as well as older models like voyage-3-large,
+ * voyage-3.5, voyage-3.5-lite and voyage-code-3.
  */
 public final class VoyageAITextEmbeddingGenerationService implements TextEmbeddingGenerationService {
 
@@ -33,7 +35,7 @@ public final class VoyageAITextEmbeddingGenerationService implements TextEmbeddi
      * Creates a new instance of VoyageAI text embedding generation service.
      *
      * @param client    VoyageAI client
-     * @param modelId   Model ID (e.g., "voyage-3-large")
+     * @param modelId   Model ID (e.g., "voyage-4-large")
      * @param serviceId Optional service ID
      */
     public VoyageAITextEmbeddingGenerationService(
@@ -143,7 +145,7 @@ public final class VoyageAITextEmbeddingGenerationService implements TextEmbeddi
         /**
          * Sets the model ID.
          *
-         * @param modelId Model ID (e.g., "voyage-3-large")
+         * @param modelId Model ID (e.g., "voyage-4-large")
          * @return This builder
          */
         public Builder withModelId(String modelId) {

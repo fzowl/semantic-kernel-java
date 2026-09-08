@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * VoyageAI contextualized embedding generation service.
+ * VoyageAI by MongoDB contextualized embedding generation service.
  * Generates embeddings that capture both local chunk details and global document-level metadata.
- * Supports models like voyage-3.
+ * Supports voyage-context-4 (current) and voyage-context-3.
  */
 public final class VoyageAIContextualizedEmbeddingGenerationService implements TextEmbeddingGenerationService {
 
@@ -35,7 +35,7 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
      * Creates a new instance of VoyageAI contextualized embedding generation service.
      *
      * @param client    VoyageAI client
-     * @param modelId   Model ID (e.g., "voyage-3")
+     * @param modelId   Model ID (e.g., "voyage-context-4")
      * @param serviceId Optional service ID
      */
     public VoyageAIContextualizedEmbeddingGenerationService(
@@ -66,9 +66,14 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
     }
 
     /**
-     * Generates contextualized embeddings for document chunks.
+     * Generates contextualized embeddings for pre-chunked documents.
      *
-     * @param inputs List of lists where each inner list contains document chunks
+     * <p>Sends the inputs in the nested form of the official
+     * {@code inputs: Union[List[List[str]], List[str]]} specification, where each inner
+     * list holds one document's chunks and is embedded as a group so every chunk is
+     * encoded in the context of the others.
+     *
+     * @param inputs List of lists where each inner list contains one document's chunks
      * @return A Mono containing a list of embeddings for all chunks across all documents
      */
     public Mono<List<Embedding>> generateContextualizedEmbeddingsAsync(List<List<String>> inputs) {
@@ -84,6 +89,41 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
         request.setInputs(inputs);
         request.setModel(modelId);
 
+        return sendRequest(request);
+    }
+
+    /**
+     * Generates contextualized embeddings from a flat list of full-document strings.
+     *
+     * <p>Sends the inputs in the flat form of the official
+     * {@code inputs: Union[List[List[str]], List[str]]} specification and enables
+     * server-side auto-chunking, so each document is split and every resulting chunk is
+     * embedded with document-level context. Per the API contract the flat, document-typed
+     * form requires auto-chunking, so {@code input_type} is set to {@code document} and
+     * {@code enable_auto_chunking} to {@code true}.
+     *
+     * @param documents flat list of full-document strings
+     * @return A Mono containing a list of embeddings for all chunks across all documents
+     */
+    public Mono<List<Embedding>> generateContextualizedEmbeddingsForDocumentsAsync(List<String> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return Mono.just(Collections.emptyList());
+        }
+
+        LOGGER.debug("Generating contextualized embeddings for {} documents (auto-chunking) using model {}",
+            documents.size(), modelId);
+
+        VoyageAIModels.ContextualizedEmbeddingRequest request =
+            new VoyageAIModels.ContextualizedEmbeddingRequest();
+        request.setFlatInputs(documents);
+        request.setModel(modelId);
+        request.setInputType("document");
+        request.setEnableAutoChunking(true);
+
+        return sendRequest(request);
+    }
+
+    private Mono<List<Embedding>> sendRequest(VoyageAIModels.ContextualizedEmbeddingRequest request) {
         return client.sendRequestAsync(
             "contextualizedembeddings",
             request,
@@ -173,7 +213,7 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
         /**
          * Sets the model ID.
          *
-         * @param modelId Model ID (e.g., "voyage-3")
+         * @param modelId Model ID (e.g., "voyage-context-4")
          * @return This builder
          */
         public Builder withModelId(String modelId) {

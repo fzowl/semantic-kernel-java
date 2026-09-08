@@ -8,7 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 
 /**
- * VoyageAI API request and response models.
+ * VoyageAI by MongoDB API request and response models.
  */
 public class VoyageAIModels {
 
@@ -122,6 +122,7 @@ public class VoyageAIModels {
     /**
      * Embedding data item.
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EmbeddingDataItem {
         @JsonProperty("object")
         private String object;
@@ -275,6 +276,7 @@ public class VoyageAIModels {
     /**
      * Rerank data item.
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RerankDataItem {
         @JsonProperty("index")
         private int index;
@@ -303,11 +305,18 @@ public class VoyageAIModels {
 
     /**
      * Request model for contextualized embeddings.
+     *
+     * <p>The VoyageAI API accepts {@code inputs} as either a nested list of chunks
+     * ({@code List<List<String>>}, one inner list per document) or a flat list of
+     * full-document strings ({@code List<String>}), matching the official
+     * {@code inputs: Union[List[List[str]], List[str]]} specification. The flat form
+     * is used together with server-side auto-chunking.
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ContextualizedEmbeddingRequest {
+        // Holds either List<List<String>> (nested chunks) or List<String> (flat documents).
         @JsonProperty("inputs")
-        private List<List<String>> inputs;
+        private Object inputs;
 
         @JsonProperty("model")
         private String model;
@@ -324,14 +333,39 @@ public class VoyageAIModels {
         @JsonProperty("output_dtype")
         private String outputDtype;
 
+        @JsonProperty("enable_auto_chunking")
+        private Boolean enableAutoChunking;
+
         @SuppressFBWarnings("EI_EXPOSE_REP")
-        public List<List<String>> getInputs() {
+        public Object getInputs() {
             return inputs;
         }
 
-        @SuppressFBWarnings("EI_EXPOSE_REP2")
+        /**
+         * Sets the inputs as a nested list of chunks, one inner list per document.
+         *
+         * @param inputs nested list of document chunks
+         */
         public void setInputs(List<List<String>> inputs) {
             this.inputs = inputs;
+        }
+
+        /**
+         * Sets the inputs as a flat list of full-document strings. Use together with
+         * server-side auto-chunking (see {@link #setEnableAutoChunking(Boolean)}).
+         *
+         * @param inputs flat list of full-document strings
+         */
+        public void setFlatInputs(List<String> inputs) {
+            this.inputs = inputs;
+        }
+
+        public Boolean getEnableAutoChunking() {
+            return enableAutoChunking;
+        }
+
+        public void setEnableAutoChunking(Boolean enableAutoChunking) {
+            this.enableAutoChunking = enableAutoChunking;
         }
 
         public String getModel() {
@@ -435,6 +469,7 @@ public class VoyageAIModels {
     /**
      * Embedding item with chunk information.
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EmbeddingItem {
         @JsonProperty("embedding")
         private float[] embedding;
