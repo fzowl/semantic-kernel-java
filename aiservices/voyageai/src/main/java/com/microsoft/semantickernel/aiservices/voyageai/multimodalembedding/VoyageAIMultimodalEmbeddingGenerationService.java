@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * VoyageAI multimodal embedding generation service.
+ * VoyageAI by MongoDB multimodal embedding generation service.
  * Generates embeddings for text, images, or interleaved text and images.
- * Supports the voyage-multimodal-3 model.
+ * Supports voyage-multimodal-3.5 (current) and voyage-multimodal-3.
  * <p>
  * Constraints:
  * - Maximum 1,000 inputs per request
@@ -41,7 +41,7 @@ public final class VoyageAIMultimodalEmbeddingGenerationService implements TextE
      * Creates a new instance of VoyageAI multimodal embedding generation service.
      *
      * @param client    VoyageAI client
-     * @param modelId   Model ID (e.g., "voyage-multimodal-3")
+     * @param modelId   Model ID (e.g., "voyage-multimodal-3.5")
      * @param serviceId Optional service ID
      */
     public VoyageAIMultimodalEmbeddingGenerationService(
@@ -196,7 +196,7 @@ public final class VoyageAIMultimodalEmbeddingGenerationService implements TextE
         /**
          * Sets the model ID.
          *
-         * @param modelId Model ID (e.g., "voyage-multimodal-3")
+         * @param modelId Model ID (e.g., "voyage-multimodal-3.5")
          * @return This builder
          */
         public Builder withModelId(String modelId) {
