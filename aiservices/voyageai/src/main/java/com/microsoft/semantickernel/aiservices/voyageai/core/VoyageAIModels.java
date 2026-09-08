@@ -8,7 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 
 /**
- * VoyageAI API request and response models.
+ * VoyageAI by MongoDB API request and response models.
  */
 public class VoyageAIModels {
 
@@ -122,6 +122,7 @@ public class VoyageAIModels {
     /**
      * Embedding data item.
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EmbeddingDataItem {
         @JsonProperty("object")
         private String object;
@@ -306,8 +307,10 @@ public class VoyageAIModels {
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ContextualizedEmbeddingRequest {
+        // Holds either a flat List&lt;String&gt; (when auto-chunking is enabled) or a
+        // nested List&lt;List&lt;String&gt;&gt; of pre-chunked documents.
         @JsonProperty("inputs")
-        private List<List<String>> inputs;
+        private Object inputs;
 
         @JsonProperty("model")
         private String model;
@@ -324,14 +327,46 @@ public class VoyageAIModels {
         @JsonProperty("output_dtype")
         private String outputDtype;
 
+        @JsonProperty("enable_auto_chunking")
+        private Boolean enableAutoChunking;
+
+        @JsonProperty("chunk_size")
+        private Integer chunkSize;
+
         @SuppressFBWarnings("EI_EXPOSE_REP")
-        public List<List<String>> getInputs() {
+        public Object getInputs() {
             return inputs;
         }
 
-        @SuppressFBWarnings("EI_EXPOSE_REP2")
+        /**
+         * Sets pre-chunked inputs: one inner list of chunks per document.
+         */
         public void setInputs(List<List<String>> inputs) {
             this.inputs = inputs;
+        }
+
+        /**
+         * Sets a flat list of documents to be chunked by the backend. Requires
+         * {@code enable_auto_chunking=true} and {@code input_type="document"}.
+         */
+        public void setFlatInputs(List<String> inputs) {
+            this.inputs = inputs;
+        }
+
+        public Boolean getEnableAutoChunking() {
+            return enableAutoChunking;
+        }
+
+        public void setEnableAutoChunking(Boolean enableAutoChunking) {
+            this.enableAutoChunking = enableAutoChunking;
+        }
+
+        public Integer getChunkSize() {
+            return chunkSize;
+        }
+
+        public void setChunkSize(Integer chunkSize) {
+            this.chunkSize = chunkSize;
         }
 
         public String getModel() {

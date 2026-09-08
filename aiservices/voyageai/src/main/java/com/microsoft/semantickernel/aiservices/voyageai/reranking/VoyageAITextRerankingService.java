@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * VoyageAI implementation of {@link TextRerankingService}.
- * Supports models like rerank-2, rerank-2-lite.
+ * VoyageAI by MongoDB implementation of {@link TextRerankingService}.
+ * Supports models like rerank-3, rerank-3-lite, rerank-2.5, rerank-2.5-lite.
  */
 public final class VoyageAITextRerankingService implements TextRerankingService {
 
@@ -33,7 +33,7 @@ public final class VoyageAITextRerankingService implements TextRerankingService 
      * Creates a new instance of VoyageAI text reranking service.
      *
      * @param client    VoyageAI client
-     * @param modelId   Model ID (e.g., "rerank-2")
+     * @param modelId   Model ID (e.g., "rerank-3")
      * @param serviceId Optional service ID
      * @param topK      Optional top K results to return
      */
@@ -140,7 +140,7 @@ public final class VoyageAITextRerankingService implements TextRerankingService 
         /**
          * Sets the model ID.
          *
-         * @param modelId Model ID (e.g., "rerank-2")
+         * @param modelId Model ID (e.g., "rerank-3")
          * @return This builder
          */
         public Builder withModelId(String modelId) {

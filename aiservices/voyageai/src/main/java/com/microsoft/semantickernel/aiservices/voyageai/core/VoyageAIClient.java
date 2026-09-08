@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * HTTP client for VoyageAI API.
+ * HTTP client for the VoyageAI by MongoDB API.
  */
 public final class VoyageAIClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(VoyageAIClient.class);

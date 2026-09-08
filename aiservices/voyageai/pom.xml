@@ -9,8 +9,8 @@
     </parent>
 
     <artifactId>semantickernel-aiservices-voyageai</artifactId>
-    <name>Semantic Kernel VoyageAI Services</name>
-    <description>VoyageAI services for Semantic Kernel</description>
+    <name>Semantic Kernel VoyageAI by MongoDB Services</name>
+    <description>VoyageAI by MongoDB services for Semantic Kernel</description>
 
     <dependencies>
         <dependency>

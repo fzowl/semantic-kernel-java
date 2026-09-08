@@ -19,13 +19,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * VoyageAI contextualized embedding generation service.
+ * VoyageAI by MongoDB contextualized embedding generation service.
  * Generates embeddings that capture both local chunk details and global document-level metadata.
- * Supports models like voyage-3.
+ * Supports models like voyage-context-4 (voyage-context-3 is the previous generation).
  */
 public final class VoyageAIContextualizedEmbeddingGenerationService implements TextEmbeddingGenerationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(VoyageAIContextualizedEmbeddingGenerationService.class);
+
+    /**
+     * Target chunk size in tokens used when the backend auto-chunks flat document
+     * inputs. VoyageAI allows values up to 32K tokens.
+     */
+    private static final int AUTO_CHUNK_SIZE = 32000;
 
     private final VoyageAIClient client;
     private final String modelId;
@@ -35,7 +41,7 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
      * Creates a new instance of VoyageAI contextualized embedding generation service.
      *
      * @param client    VoyageAI client
-     * @param modelId   Model ID (e.g., "voyage-3")
+     * @param modelId   Model ID (e.g., "voyage-context-4")
      * @param serviceId Optional service ID
      */
     public VoyageAIContextualizedEmbeddingGenerationService(
@@ -88,18 +94,23 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
             "contextualizedembeddings",
             request,
             VoyageAIModels.ContextualizedEmbeddingResponse.class)
-            .map(response -> {
-                List<Embedding> embeddings = new ArrayList<>();
-                // Parse nested data structure: {"data":[{"data":[{"embedding":[...]}]}]}
-                for (VoyageAIModels.ContextualizedEmbeddingDataList dataList : response.getData()) {
-                    for (VoyageAIModels.EmbeddingDataItem item : dataList.getData()) {
-                        embeddings.add(new Embedding(item.getEmbedding()));
-                    }
-                }
+            .map(this::parseEmbeddings);
+    }
 
-                LOGGER.debug("Received {} contextualized embeddings from VoyageAI", embeddings.size());
-                return embeddings;
-            });
+    /**
+     * Parses the nested contextualized embedding response
+     * ({@code {"data":[{"data":[{"embedding":[...]}]}]}}) into a flat list of embeddings.
+     */
+    private List<Embedding> parseEmbeddings(VoyageAIModels.ContextualizedEmbeddingResponse response) {
+        List<Embedding> embeddings = new ArrayList<>();
+        for (VoyageAIModels.ContextualizedEmbeddingDataList dataList : response.getData()) {
+            for (VoyageAIModels.EmbeddingDataItem item : dataList.getData()) {
+                embeddings.add(new Embedding(item.getEmbedding()));
+            }
+        }
+
+        LOGGER.debug("Received {} contextualized embeddings from VoyageAI by MongoDB", embeddings.size());
+        return embeddings;
     }
 
     /**
@@ -122,7 +133,10 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
 
     /**
      * Generates embeddings for the given texts.
-     * Each text is treated as a separate document for contextualized embeddings.
+     * Each text is treated as a separate document and chunked by the VoyageAI by MongoDB
+     * backend. The {@code contextualizedembeddings} API is called with a flat list of
+     * documents, {@code enable_auto_chunking=true} and {@code chunk_size=32000}
+     * (which requires {@code input_type="document"}).
      *
      * @param data The texts to generate embeddings for
      * @return A Mono that completes with the list of embeddings
@@ -133,13 +147,22 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
             return Mono.just(Collections.emptyList());
         }
 
-        // Convert each string to a single-element list for contextualized embeddings
-        List<List<String>> inputs = new ArrayList<>();
-        for (String text : data) {
-            inputs.add(Arrays.asList(text));
-        }
+        LOGGER.debug("Generating contextualized embeddings for {} documents (auto-chunking, "
+            + "chunk_size={}) using model {}", data.size(), AUTO_CHUNK_SIZE, modelId);
 
-        return generateContextualizedEmbeddingsAsync(inputs);
+        VoyageAIModels.ContextualizedEmbeddingRequest request =
+            new VoyageAIModels.ContextualizedEmbeddingRequest();
+        request.setFlatInputs(data);
+        request.setModel(modelId);
+        request.setInputType("document");
+        request.setEnableAutoChunking(true);
+        request.setChunkSize(AUTO_CHUNK_SIZE);
+
+        return client.sendRequestAsync(
+            "contextualizedembeddings",
+            request,
+            VoyageAIModels.ContextualizedEmbeddingResponse.class)
+            .map(this::parseEmbeddings);
     }
 
     /**
@@ -173,7 +196,7 @@ public final class VoyageAIContextualizedEmbeddingGenerationService implements T
         /**
          * Sets the model ID.
          *
-         * @param modelId Model ID (e.g., "voyage-3")
+         * @param modelId Model ID (e.g., "voyage-context-4")
          * @return This builder
          */
         public Builder withModelId(String modelId) {
